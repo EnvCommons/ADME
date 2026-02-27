@@ -16,11 +16,11 @@ DATASETS = [
     {"name": "Lipophilicity_AstraZeneca", "property": "Lipophilicity", "units": "LogP"},
     {"name": "Solubility_AqSolDB", "property": "Aqueous Solubility", "units": "log(mol/L)"},
     {"name": "PPBR_AZ", "property": "Plasma Protein Binding Rate", "units": "%"},
-    {"name": "Caco2_Wang", "property": "Caco-2 Permeability", "units": "cm/s (log)"},
+    {"name": "Caco2_Wang", "property": "Caco-2 Permeability", "units": "log cm/s"},
     {"name": "Clearance_Hepatocyte_AZ", "property": "Hepatocyte Clearance", "units": "uL/min/10^6 cells"},
     {"name": "Clearance_Microsome_AZ", "property": "Microsome Clearance", "units": "uL/min/mg"},
-    {"name": "VDss_Lombardo", "property": "Volume of Distribution", "units": "L/kg (log)"},
-    {"name": "Half_Life_Obach", "property": "Half-Life", "units": "hours (log)"},
+    {"name": "VDss_Lombardo", "property": "Volume of Distribution", "units": "L/kg"},
+    {"name": "Half_Life_Obach", "property": "Half-Life", "units": "hr"},
 ]
 
 TRAIN_SIZE = 1000
