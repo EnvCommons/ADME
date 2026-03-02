@@ -70,6 +70,10 @@ Agents are given a single tool:
 
 ADME is a single-turn environment. The agent receives a molecule and property endpoint, then submits one prediction. Each task requires exactly one tool call.
 
+## Environment Difficulty
+
+[Fill in: baseline model performance, human expert comparison, variance across property types]
+
 ## Other Environment Requirements
 
 There are no further environment requirements; ADME works out of the box with the OpenReward endpoint.
