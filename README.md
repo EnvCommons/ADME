@@ -1,100 +1,100 @@
-# AdmePred
+# ADME
 
-Single-turn OpenReward environment for predicting ADME (Absorption, Distribution, Metabolism, Excretion) molecular properties from SMILES notation.
+[![OpenReward Environment](https://img.shields.io/badge/%E2%AD%90%20OpenReward-Environment-f7e6cc)](https://openreward.ai/GeneralReasoning/ADME)
 
-## Task
+## Description
 
-Given a molecule's SMILES string and an ADME endpoint name, the agent predicts the numerical property value. One tool call per task — predict and receive a reward.
+**ADME** is an environment for evaluating agents on ADME (Absorption, Distribution, Metabolism, Excretion) property prediction. Given a molecule's SMILES string and an ADME endpoint name, agents predict the numerical property value. The dataset pools 8 ADME regression datasets from [Therapeutics Data Commons (TDC)](https://tdcommons.ai/), covering Caco-2 permeability, lipophilicity, aqueous solubility, plasma protein binding, clearance, volume of distribution, and half-life.
 
-## Data Source
+## Capabilities
 
-All data comes from [Therapeutics Data Commons (TDC)](https://tdcommons.ai/single_pred_tasks/adme/), pooling 8 ADME regression datasets:
+- Predicting diverse ADME molecular properties from SMILES notation
+- Quantitative molecular property prediction across multiple endpoints
+- Understanding structure-property relationships in pharmacokinetics
 
-| Dataset | Property | Units | Molecules | Source Paper |
-|---------|----------|-------|-----------|-------------|
-| Lipophilicity_AstraZeneca | Lipophilicity | LogP | 4,200 | AstraZeneca |
-| Solubility_AqSolDB | Aqueous Solubility | log(mol/L) | 9,982 | AqSolDB |
-| PPBR_AZ | Plasma Protein Binding Rate | % | 1,614 | AstraZeneca |
-| Caco2_Wang | Caco-2 Permeability | cm/s (log) | 906 | Wang et al. |
-| Clearance_Hepatocyte_AZ | Hepatocyte Clearance | uL/min/10^6 cells | 1,020 | AstraZeneca |
-| Clearance_Microsome_AZ | Microsome Clearance | uL/min/mg | 1,102 | AstraZeneca |
-| VDss_Lombardo | Volume of Distribution | L/kg (log) | 1,111 | Lombardo et al. |
-| Half_Life_Obach | Half-Life | hours (log) | 665 | Obach et al. |
+## Compute Requirements
 
-Total pool: ~20,600 molecules. 1,100 sampled (1,000 train + 100 test), shuffled with `random_state=42`.
+ADME does not require a sandbox. It has minimal compute requirements.
 
-### Property Distribution in Splits
+## License
 
-**Train (1,000 tasks):** Aqueous Solubility (463), Lipophilicity (198), Plasma Protein Binding (89), Volume of Distribution (58), Microsome Clearance (57), Caco-2 Permeability (54), Hepatocyte Clearance (47), Half-Life (34).
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (following the TDC dataset licenses).
 
-**Test (100 tasks):** Aqueous Solubility (51), Lipophilicity (13), Plasma Protein Binding (10), Volume of Distribution (6), Microsome Clearance (6), Hepatocyte Clearance (5), Half-Life (5), Caco-2 Permeability (4).
+## Tasks
 
-The distribution is proportional to dataset size — solubility dominates because AqSolDB is the largest source.
+There are two splits: train (1,000 tasks) and test (100 tasks), totaling 1,100 tasks. Tasks are sampled proportionally from 8 TDC ADME regression datasets:
 
-## Reward Function
+| Dataset | Property | Units | Molecules | Source |
+|---------|----------|-------|-----------|--------|
+| Lipophilicity_AstraZeneca | Lipophilicity | LogP | 4,200 | [TDC](https://tdcommons.ai/single_pred_tasks/adme/#lipophilicity-astrazeneca) |
+| Solubility_AqSolDB | Aqueous Solubility | log(mol/L) | 9,982 | [TDC](https://tdcommons.ai/single_pred_tasks/adme/#solubility-aqsoldb) |
+| PPBR_AZ | Plasma Protein Binding Rate | % | 2,828 | [TDC](https://tdcommons.ai/single_pred_tasks/adme/#ppbr-az) |
+| Caco2_Wang | Caco-2 Permeability | log cm/s | 910 | [TDC](https://tdcommons.ai/single_pred_tasks/adme/#caco-2-wang) |
+| Clearance_Hepatocyte_AZ | Hepatocyte Clearance | uL/min/10^6 cells | 1,213 | [TDC](https://tdcommons.ai/single_pred_tasks/adme/#clearance-hepatocyte-az) |
+| Clearance_Microsome_AZ | Microsome Clearance | uL/min/mg | 1,102 | [TDC](https://tdcommons.ai/single_pred_tasks/adme/#clearance-microsome-az) |
+| VDss_Lombardo | Volume of Distribution | L/kg | 1,130 | [TDC](https://tdcommons.ai/single_pred_tasks/adme/#vdss-lombardo) |
+| Half_Life_Obach | Half-Life | hr | 667 | [TDC](https://tdcommons.ai/single_pred_tasks/adme/#half-life-obach) |
 
-Continuous reward in [0, 1] using inverse hyperbolic cosine of the relative error:
+Each task provides a molecule's SMILES string, the property name, and the expected units.
 
-```
-reward = 1 / cosh(relative_error * 3.0)
-```
+## Reward Structure
 
-Where `relative_error = |predicted - actual| / |actual|`.
+This is a sparse, verifiable reward environment with continuous scoring. The agent calls `submit_prediction` once with a predicted value. The reward is based on relative error using inverse hyperbolic cosine scaling:
+
+$$\text{Reward} = \frac{1}{\cosh(\text{relative\_error} \times 3.0)}$$
+
+where $\text{relative\_error} = \frac{|\hat{y} - y|}{|y|}$.
 
 | Relative Error | Reward |
 |---------------|--------|
 | 0% (exact) | 1.000 |
-| 5% | 0.989 |
 | 10% | 0.957 |
-| 25% | 0.772 |
 | 50% | 0.425 |
 | 100% | 0.099 |
-| 200% | 0.005 |
 
-For actual values of 0, falls back to absolute error scaling.
+For actual values of 0, the reward falls back to absolute error scaling.
 
-## Environment API
+We do not use LLM graders for this task.
 
-- **Splits:** `train` (1,000 tasks), `test` (100 tasks)
-- **Tool:** `submit_prediction(prediction: float)` — submit a numerical value
-- **Prompt:** Provides SMILES string, property name, and units
-- **Finished:** Always `True` after one tool call (single-turn)
+## Data
 
-## Files
+Task data is pooled from 8 [TDC ADME](https://tdcommons.ai/single_pred_tasks/adme/) regression datasets (~22,000 molecules total). 1,100 molecules are sampled proportionally across datasets. Data files are stored on the OpenReward platform.
 
-```
-admepred/
-├── admepred.py        # Environment class (AdmePred)
-├── server.py          # Server wrapper
-├── test_agent.py      # OpenAI Responses API test harness
-├── prepare_data.py    # TDC download + JSON generation script
-├── requirements.txt   # openreward, pydantic
-├── Dockerfile
-├── DATA_UPLOAD.md     # Cloud storage upload instructions
-└── data/
-    ├── train.json     # 1,000 training tasks
-    └── test.json      # 100 test tasks
-```
+## Tools
 
-## Local Development
+Agents are given a single tool:
 
-```bash
-# Generate data (requires PyTDC)
-pip install PyTDC pandas
-python prepare_data.py
+- `submit_prediction`: Submit a predicted numerical value for the ADME property. Returns the reward based on prediction accuracy. This tool can only be called once per task.
 
-# Run server
-pip install -r requirements.txt
-python server.py
+## Time Horizon
 
-# Test with agent
-export OPENAI_API_KEY=...
-python test_agent.py
-```
+ADME is a single-turn environment. The agent receives a molecule and property endpoint, then submits one prediction. Each task requires exactly one tool call.
 
-## Docker
+## Other Environment Requirements
 
-```bash
-docker build -t admepred:test .
-docker run -p 8080:8080 admepred:test
+There are no further environment requirements; ADME works out of the box with the OpenReward endpoint.
+
+## Safety
+
+Agents in ADME are asked to predict pharmacokinetic properties for molecules. The environment does not present direct safety risks, as agents only provide numerical predictions with no access to external systems or real pharmacological processes.
+
+However, this is a dual-use domain and models trained for capabilities in this environment could be used for malicious uses in other agentic workflows.
+
+## Citations
+
+```bibtex
+@dataset{GRADME,
+  author    = {General Reasoning Inc. Team},
+  title     = {ADME},
+  year      = {2026},
+  publisher = {OpenReward},
+  url       = {https://openreward.ai/GeneralReasoning/ADME}
+}
+
+@article{huang2021therapeutics,
+  title={Therapeutics Data Commons: Machine learning datasets and tasks for drug discovery and development},
+  author={Huang, Kexin and Fu, Tianfan and Gao, Wenhao and Zhao, Yue and Roohani, Yusuf and Leskovec, Jure and Coley, Connor W and Xiao, Cao and Sun, Jimeng and Zitnik, Marinka},
+  journal={Proceedings of NeurIPS Datasets and Benchmarks},
+  year={2021}
+}
 ```
