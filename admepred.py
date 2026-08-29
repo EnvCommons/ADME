@@ -28,6 +28,10 @@ from openreward.environments import (
     tool,
 )
 
+# Reward for a submission made after the task has already been graded. Negative
+# so repeat submissions are actively discouraged, not merely left unscored.
+REPEAT_SUBMISSION_PENALTY = -0.1
+
 # Path handling (production vs local development)
 if os.path.exists("/orwd_data"):
     ENV_PATH = Path("/orwd_data")
@@ -92,6 +96,11 @@ class AdmePred(Environment):
 
         self.answer = ANSWERS[self.validated.task_id]
 
+        # Graded submissions this session. Only the first is rewarded: the
+        # reward is a smooth function of |predicted - actual| reported back to
+        # 4dp, so repeated probing recovers the target value.
+        self.submitted = 0
+
     @classmethod
     def list_splits(cls) -> list[Split]:
         return [
@@ -114,6 +123,16 @@ class AdmePred(Environment):
     @tool
     async def submit_prediction(self, params: SubmitPredictionInput) -> ToolOutput:
         """Submit your predicted ADME property value for the molecule."""
+        if self.submitted > 0:
+            return ToolOutput(
+                blocks=[TextBlock(text="A prediction has already been submitted for this task. "
+                                       "This episode is over: it is not re-graded, and repeat "
+                                       "submissions are penalised (reward -0.1).")],
+                metadata={"already_submitted": True, "submission_count": self.submitted},
+                reward=REPEAT_SUBMISSION_PENALTY,
+                finished=True,
+            )
+
         predicted = params.prediction
         actual = self.answer["value"]
         reward = self._compute_reward(predicted, actual)
@@ -123,6 +142,8 @@ class AdmePred(Environment):
             f"Reward: {reward:.4f}\n\n"
             f"Property: {self.validated.property_name} ({self.validated.property_units})"
         )
+
+        self.submitted += 1
 
         return ToolOutput(
             blocks=[TextBlock(text=feedback)],
