@@ -65,6 +65,13 @@ ANSWERS = {
 print(f"Loaded {len(ANSWERS)} AdmePred tasks")
 
 
+def sech(x: float) -> float:
+    """1/cosh(x), written so it underflows to 0.0 instead of raising
+    OverflowError for large |x|."""
+    e = math.exp(-abs(x))
+    return 2.0 * e / (1.0 + e * e)
+
+
 class AdmePredTaskSpec(BaseModel):
     task_id: str
     smiles: str
@@ -134,6 +141,17 @@ class AdmePred(Environment):
             )
 
         predicted = params.prediction
+        if not math.isfinite(predicted):
+            # Not graded and not counted as the attempt, so the episode stays open.
+            return ToolOutput(
+                blocks=[TextBlock(text=f"Invalid prediction: {predicted} is not a finite number. "
+                                       "It was not graded; you can resubmit a finite "
+                                       "numerical value.")],
+                metadata={"error": "non_finite_prediction"},
+                reward=0.0,
+                finished=False,
+            )
+
         actual = self.answer["value"]
         reward = self._compute_reward(predicted, actual)
 
@@ -152,7 +170,6 @@ class AdmePred(Environment):
                 "smiles": self.validated.smiles,
                 "property_name": self.validated.property_name,
                 "predicted": predicted,
-                "actual": actual,
                 "reward": reward,
             },
             reward=reward,
@@ -170,9 +187,9 @@ class AdmePred(Environment):
         """
         if actual == 0:
             abs_err = abs(predicted - actual)
-            return max(0.0, 1.0 / math.cosh(abs_err * 3.0))
+            return max(0.0, sech(abs_err * 3.0))
 
         rel_error = abs(predicted - actual) / abs(actual)
         scale = 3.0
-        reward = 1.0 / math.cosh(rel_error * scale)
+        reward = sech(rel_error * scale)
         return round(reward, 4)
