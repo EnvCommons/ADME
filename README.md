@@ -64,7 +64,7 @@ Task data is pooled from 8 [TDC ADME](https://tdcommons.ai/single_pred_tasks/adm
 
 Agents are given a single tool:
 
-- `submit_prediction`: Submit a predicted numerical value for the ADME property. Returns the reward based on prediction accuracy. This tool can only be called once per task.
+- `submit_prediction`: Submit a predicted numerical value for the ADME property. Returns the reward based on prediction accuracy. A non-finite prediction (NaN or infinity) is rejected without grading and can be resubmitted; the first graded prediction ends the episode.
 
 ## Time Horizon
 
