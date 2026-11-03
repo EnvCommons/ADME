@@ -18,11 +18,11 @@ ADME does not require a sandbox. It has minimal compute requirements.
 
 ## License
 
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (following the TDC dataset licenses).
+[MIT](https://opensource.org/licenses/MIT).
 
 ## Tasks
 
-There are two splits: train (1,000 tasks) and test (100 tasks), totaling 1,100 tasks. Tasks are sampled proportionally from 8 TDC ADME regression datasets:
+There are 1,000 tasks in the `train` split and 100 in `test`. Tasks are sampled proportionally from 8 TDC ADME regression datasets:
 
 | Dataset | Property | Units | Molecules | Source |
 |---------|----------|-------|-----------|--------|
@@ -52,7 +52,7 @@ where $\text{relative\_error} = \frac{|\hat{y} - y|}{|y|}$.
 | 50% | 0.425 |
 | 100% | 0.099 |
 
-For actual values of 0, the reward falls back to absolute error scaling.
+For actual values of 0, the reward falls back to absolute error scaling. A repeated submission after the first graded prediction is not re-graded and gets -0.1.
 
 We do not use LLM graders for this task.
 
@@ -68,15 +68,11 @@ Agents are given a single tool:
 
 ## Time Horizon
 
-ADME is a single-turn environment. The agent receives a molecule and property endpoint, then submits one prediction. Each task requires exactly one tool call.
-
-## Environment Difficulty
-
-[Fill in: baseline model performance, human expert comparison, variance across property types]
+ADME is a single-turn environment. The agent receives a molecule and property endpoint, then submits one prediction. The first graded `submit_prediction` call ends the episode.
 
 ## Other Environment Requirements
 
-There are no further environment requirements; ADME works out of the box with the OpenReward endpoint.
+ADME needs no secrets.
 
 ## Safety
 
