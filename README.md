@@ -83,13 +83,6 @@ However, this is a dual-use domain and models trained for capabilities in this e
 ## Citations
 
 ```bibtex
-@dataset{GRADME,
-  author    = {General Reasoning Inc. Team},
-  title     = {ADME},
-  year      = {2026},
-  publisher = {OpenReward},
-  url       = {https://openreward.ai/GeneralReasoning/ADME}
-}
 
 @article{huang2021therapeutics,
   title={Therapeutics Data Commons: Machine learning datasets and tasks for drug discovery and development},
